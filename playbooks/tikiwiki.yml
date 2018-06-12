@@ -1,0 +1,127 @@
+---
+- hosts: pi3
+  become: true
+  tasks:
+    - name: install tikiwiki components and ensure they are started
+      apt: name={{ item }} state=present update_cache=yes
+      with_items:
+        - mariadb-server
+        - python-mysqldb
+        - nginx
+        - php-fpm
+        - php-mysql
+
+    - name: ensure tikiwiki components are started
+      service: name={{ item }} state=started enabled=yes
+      with_items:
+        - mariadb
+        - nginx
+
+    - name: Copy over SSL key
+      copy:
+        src: tikiwiki/nginx-wiki.datagration.co.uk.key
+        dest: /etc/ssl/private
+        mode: 0600
+        owner: root
+        group: root
+      notify: reload nginx
+
+    - name: Copy over SSL cert
+      copy:
+        src: tikiwiki/nginx-wiki.datagration.co.uk.crt
+        dest: /etc/ssl/certs
+        mode: 0644
+        owner: root
+        group: ssl-cert
+      notify: reload nginx
+
+    - name: Copy over DH params 
+      copy:
+        src: tikiwiki/dhparam.pem
+        dest: /etc/ssl/certs
+        mode: 0644
+        owner: root
+        group: root
+      notify: reload nginx
+
+    - name: Copy over self-signed.conf 
+      copy:
+        src: tikiwiki/self-signed.conf
+        dest: /etc/nginx/snippets
+        mode: 0644
+        owner: root
+        group: root
+      notify: reload nginx
+
+    - name: Copy over ssl-params.conf
+      copy:
+        src: tikiwiki/ssl-params.conf
+        dest: /etc/nginx/snippets
+        mode: 0644
+        owner: root
+        group: root
+      notify: reload nginx
+
+    - name: Copy over tikiwiki virtualhost 
+      copy:
+        src: tikiwiki/tikiwiki
+        dest: /etc/nginx/sites-available
+        mode: 0644
+        owner: root
+        group: root
+      notify: reload nginx
+
+    - name: Copy over info.php
+      copy:
+        src: tikiwiki/info.php
+        dest: /var/www/html
+
+    - name: Remove nginx default virtual host
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: reload nginx
+    
+    - name: Enable nginx virtual host
+      file:
+        src: /etc/nginx/sites-available/tikiwiki
+        dest: /etc/nginx/sites-enabled/tikiwiki
+        owner: root
+        group: root
+        state: link
+      notify: reload nginx
+
+    # Outstanding: 
+    # remove mysql no password root login
+    # sudo mysql_secure_installation
+    
+    - name: Create tikiwiki database
+      mysql_db:
+        name: tikiwiki
+        state: present
+
+    - name: Create tikiwiki user
+      mysql_user:
+        name: tikiwiki
+        password: tikiwiki
+        priv: 'tikiwiki.*:ALL'
+        state: present
+
+    - name: Copy database dump file
+      copy:
+        src: ~/tiki/tiki.mysqldump.sql.bz2
+        dest: /var/tmp
+
+    - name: Restore tikiwiki database
+      mysql_db:
+        login_user: tikiwiki
+        login_password: tikiwiki
+        name: tikiwiki
+        state: import
+        target: /var/tmp/tiki.mysqldump.sql.bz2
+
+  handlers:
+    - name: reload nginx
+      service:
+        name: nginx
+        state: reloaded
