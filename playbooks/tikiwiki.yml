@@ -120,8 +120,19 @@
         state: import
         target: /var/tmp/tiki.mysqldump.sql.bz2
 
+    - name: Secure php.ini fix_pathinfo
+      lineinfile:
+        dest: /etc/php/7.0/fpm/php.ini
+        regexp: ^;cgi.fix_pathinfo=1
+        line: "cgi.fix_pathinfo=0"
+  
   handlers:
     - name: reload nginx
       service:
         name: nginx
+        state: reloaded
+
+    - name: reload php-fpm
+      service:
+        name: php7.0-fpm
         state: reloaded
