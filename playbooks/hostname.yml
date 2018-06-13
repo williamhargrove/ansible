@@ -1,5 +1,0 @@
----
-  - hosts: pi3
-    tasks: 
-      - name: get server hostname
-        command: hostname

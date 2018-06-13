@@ -1,0 +1,28 @@
+---
+- hosts: pi3
+  become: true
+  tasks:
+    - name: verify nginx service
+      command: service nginx status warn=False
+
+    - name: verify nginx is listening on 80
+      wait_for: port=80 timeout=2
+
+    - name: verify nginx is listening on 443
+      wait_for: port=443 timeout=2
+
+    - name: verify php-fpm
+      command: service php7.0-fpm status warn=False
+
+    - name: verify mysql service
+      command: service mysql status warn=False
+
+    - name: verify mysql is listening on 3306
+      wait_for: port=3306 timeout=2
+
+    - name: verify nginx index response
+      uri: url=https://wiki.datagration.co.uk return_content=yes validate_certs=no
+      register: nginx_index
+
+    - fail: msg="index page failed to return content"
+      when: "'Welcome to nginx!' not in nginx_index.content"
