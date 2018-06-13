@@ -10,6 +10,8 @@
         - nginx
         - php-fpm
         - php-mysql
+        - php-dom
+        - php-gd
         - python-httplib2 # for uri: 
 
     - name: ensure tikiwiki components are started
