@@ -22,7 +22,7 @@
 
     - name: Copy over SSL key
       copy:
-        src: tikiwiki/nginx-wiki.datagration.co.uk.key
+        src: tikiwiki/wiki.datagration.co.uk.key
         dest: /etc/ssl/private
         mode: 0600
         owner: root
@@ -31,7 +31,7 @@
 
     - name: Copy over SSL cert
       copy:
-        src: tikiwiki/nginx-wiki.datagration.co.uk.crt
+        src: tikiwiki/wiki.datagration.co.uk.crt
         dest: /etc/ssl/certs
         mode: 0644
         owner: root
